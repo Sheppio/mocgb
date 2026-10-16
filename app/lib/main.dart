@@ -6,6 +6,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'club_data.dart';
 import 'device_menu.dart';
+import 'install.dart';
 import 'pages/contact.dart';
 import 'pages/events.dart';
 import 'pages/home.dart';
@@ -75,7 +76,7 @@ class _AppShellState extends State<AppShell> {
           const TailLights(height: 22),
           Text('MOCGB', style: display(context, 26)),
         ]),
-        actions: const [DeviceMenu()],
+        actions: const [InstallButton(), DeviceMenu()],
       ),
       // Each tab keeps its place (scroll position, postcode search) while you look at another.
       // SafeArea keeps content clear of notches and camera holes when a phone is on its side.

@@ -40,6 +40,7 @@ dependencies:
   geolocator: ^14.1.1
   shared_preferences: ^2.5.6
   flutter_native_splash: ^2.4.8
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:
