@@ -26,5 +26,8 @@ cd app
 # Production is a release build. Everything else (local, dev and branch Previews) is a profile build,
 # so the device_preview menu works there. Workers Builds sets WORKERS_CI_BRANCH.
 if [ "$WORKERS_CI_BRANCH" = prod ]; then MODE=--release; else MODE=--profile; fi
-"$FLUTTER" build web $MODE --base-href /app/ --output ../website/app
+# --wasm also builds a WebAssembly version, which browsers that support it (WasmGC) load instead
+# of the JavaScript one; the rest fall back to JavaScript automatically. --no-web-resources-cdn serves
+# Flutter's engine files from /app/ too, instead of Google's CDN, so nothing loads from elsewhere.
+"$FLUTTER" build web $MODE --wasm --no-web-resources-cdn --base-href /app/ --output ../website/app
 echo "Wrote website/app"

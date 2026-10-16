@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- "Use my location" in the meetings finder: an approximate position is enough -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="mocgb"
+        android:label="MOCGB"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

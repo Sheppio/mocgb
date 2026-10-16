@@ -41,7 +41,9 @@ To check the config locally without deploying: `npm run check`. To run the site 
 
 Production (`WORKERS_CI_BRANCH=prod`) gets a release build. Every other build (local, `dev` and other branch Previews) is a profile build, so the device_preview menu works there (see `app/README.md`).
 
-Two other files handle `/app/`. `website/sw.js` ignores it, so the site's service worker doesn't cache Flutter's files or answer for them offline. `website/_headers` sends `Cache-Control: no-cache` for it, because Flutter's file names don't change between builds. The app uses `#` URLs (`/app/#/...`), so links into it never reach the Worker's 404 page.
+The build uses `--wasm`: browsers with WasmGC (recent Chrome, Edge, Firefox, Safari) load the WebAssembly version and the rest fall back to JavaScript. `--no-web-resources-cdn` serves Flutter's engine files from `/app/` rather than Google's CDN.
+
+Two other files handle `/app/`. `website/sw.js` ignores it, so the site's service worker doesn't cache Flutter's files or answer for them offline. `website/_headers` sends `Cache-Control: no-cache` for it, because Flutter's file names don't change between builds, and the `Cross-Origin-Opener-Policy`/`Cross-Origin-Embedder-Policy` pair that lets the WebAssembly build render on several threads. `npx wrangler dev` applies these headers locally; `npm start` doesn't. The app uses `#` URLs (`/app/#/...`), so links into it never reach the Worker's 404 page.
 
 ## Things to know
 

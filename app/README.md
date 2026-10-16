@@ -7,8 +7,13 @@ The web build is served at `/app/` next to the HTML site: https://mocgb.helloshe
 ## Running it
 
 - Web, as hosted: `npm run build && npm start` in the repo root, then open http://localhost:8765/app/
-- While developing: `flutter run -d chrome` in `app/`. Data then comes from the live site, because the app isn't on the site's host.
+- With the real headers (WebAssembly multi-threading): `npm run build && npx wrangler dev`, then http://localhost:8787/app/
+- While developing: `flutter run -d chrome` in `app/` (data loads only when the site's files are on the same host, so the web build above is the better check).
 - Phones: `flutter run` with a simulator or device connected. Phone builds read data from https://mocgb.helloshep.com.
+
+## Look
+
+Five tabs along the bottom: Home, Events, Meetings, Contact, More. Colours, the Archivo font (`assets/fonts`), tail lights and racing stripes come from the website. The splash screen and app icons are generated from `assets/icon/` by `dart run flutter_native_splash:create` and `dart run flutter_launcher_icons` (settings in `pubspec.yaml`).
 
 ## Trying other devices
 

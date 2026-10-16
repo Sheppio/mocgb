@@ -1,245 +1,97 @@
-// MOCGB app: the members' hub. Same content as the website: next event, area meetings,
-// contacts, joining and club links, mostly pointing at mocgb.net.
+// MOCGB app: the members' hub. Same content as the website (events, area meetings, contacts,
+// joining and club links), laid out as an app with a tab bar along the bottom.
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-import 'data.dart';
+import 'club_data.dart';
 import 'device_menu.dart';
+import 'pages/contact.dart';
+import 'pages/events.dart';
+import 'pages/home.dart';
+import 'pages/meetings.dart';
+import 'pages/more.dart';
+import 'ui.dart';
 
 void main() {
   // Lets the app be shown as other phones and tablets (see device_menu.dart). device_preview only
   // simulates in debug and profile builds, so production (a release build) is unaffected.
-  DevicePreview.enable();
-  runApp(const MocgbApp());
+  final binding = DevicePreview.enable();
+  // Keep the splash screen (pubspec.yaml) up until the events have loaded, for at most 3 seconds
+  FlutterNativeSplash.preserve(widgetsBinding: binding);
+  final data = ClubData();
+  Future.any([data.firstLoad, Future.delayed(const Duration(seconds: 3))]).whenComplete(FlutterNativeSplash.remove);
+  runApp(MocgbApp(data: data));
 }
-
-// Colours from the website (website/styles.css)
-const guardsmanBlue = Color(0xFF1B2A4E);
-const candyappleRed = Color(0xFFB3121B);
-const wimbledonWhite = Color(0xFFF1F2EF);
 
 class MocgbApp extends StatelessWidget {
-  const MocgbApp({super.key});
+  const MocgbApp({super.key, required this.data});
+  final ClubData data;
 
   @override
-  Widget build(BuildContext context) {
-    ThemeData theme(Brightness b) => ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: guardsmanBlue,
-            primary: b == Brightness.light ? guardsmanBlue : const Color(0xFFB8C8EC),
-            secondary: candyappleRed,
-            brightness: b,
+  Widget build(BuildContext context) => ClubScope(
+        data: data,
+        child: ListenableBuilder(
+          listenable: data,
+          builder: (context, _) => MaterialApp(
+            title: 'MOCGB',
+            debugShowCheckedModeBanner: false,
+            theme: clubTheme(Brightness.light),
+            darkTheme: clubTheme(Brightness.dark),
+            themeMode: data.themeMode,
+            home: const AppShell(),
           ),
-          scaffoldBackgroundColor: b == Brightness.light ? wimbledonWhite : const Color(0xFF0F1526),
-        );
-    return MaterialApp(
-      title: 'MOCGB',
-      debugShowCheckedModeBanner: false,
-      theme: theme(Brightness.light),
-      darkTheme: theme(Brightness.dark),
-      home: const HubPage(),
-    );
-  }
+        ),
+      );
 }
 
-Future<void> open(String url) => launchUrl(Uri.parse(url));
+const _tabs = [
+  (Icons.home_outlined, Icons.home, 'Home'),
+  (Icons.event_outlined, Icons.event, 'Events'),
+  (Icons.place_outlined, Icons.place, 'Meetings'),
+  (Icons.mail_outline, Icons.mail, 'Contact'),
+  (Icons.menu, Icons.menu, 'More'),
+];
 
-class HubPage extends StatefulWidget {
-  const HubPage({super.key});
+class AppShell extends StatefulWidget {
+  const AppShell({super.key});
 
   @override
-  State<HubPage> createState() => _HubPageState();
+  State<AppShell> createState() => _AppShellState();
 }
 
-class _HubPageState extends State<HubPage> {
-  late final Future<List<ClubEvent>> _events = loadEvents();
-  late final Future<List<Area>> _areas = loadAreas();
+class _AppShellState extends State<AppShell> {
+  int _tab = 0;
+
+  void _goTo(int tab) => setState(() => _tab = tab);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MOCGB'),
+        titleSpacing: 16,
+        title: Row(mainAxisSize: MainAxisSize.min, spacing: 10, children: [
+          const TailLights(height: 22),
+          Text('MOCGB', style: display(context, 26)),
+        ]),
         actions: const [DeviceMenu()],
-        backgroundColor: guardsmanBlue,
-        foregroundColor: Colors.white,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text('Mustang Owners Club of Great Britain',
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 4),
-          const Text('Run by volunteers for more than 2,500 members. Owners and fans of every '
-              'Mustang, from 1964 to today, are welcome.'),
-          const _Heading('Next event'),
-          FutureBuilder(
-            future: _events,
-            builder: (context, snap) => _loaded(snap, (events) =>
-                events.isEmpty ? const Text('No events announced yet.') : EventCard(events.first)),
-          ),
-          const _Heading('Area meetings'),
-          FutureBuilder(
-            future: _areas,
-            builder: (context, snap) => _loaded(snap, (areas) => Card(
-                  child: Column(children: [for (final a in areas) AreaTile(a)]),
-                )),
-          ),
-          const _Heading('Contact the club'),
-          Card(
-            child: Column(children: [
-              for (final (role, about, email) in _contacts)
-                ListTile(
-                  title: Text(role),
-                  subtitle: Text('$about\n$email'),
-                  isThreeLine: true,
-                  onTap: () => open('mailto:$email'),
-                ),
-            ]),
-          ),
-          const _Heading('Join the club'),
-          const Text('Full membership or digital membership. Returning members can skip the joining fee.'),
-          const SizedBox(height: 12),
-          Wrap(spacing: 12, runSpacing: 8, children: [
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: candyappleRed),
-              onPressed: () => open('https://www.mocgb.net/index.php/memberships'),
-              child: const Text('Join the MOCGB'),
-            ),
-            OutlinedButton(
-              onPressed: () => open('https://www.mocgb.net/index.php/memberships/online/sign-up'),
-              child: const Text('Digital membership'),
-            ),
-          ]),
-          const _Heading('Club links'),
-          Card(
-            child: Column(children: [
-              for (final (title, about, url) in _links)
-                ListTile(
-                  title: Text(title),
-                  subtitle: Text(about),
-                  trailing: const Icon(Icons.open_in_new, size: 18),
-                  onTap: () => open(url),
-                ),
-            ]),
-          ),
-          const SizedBox(height: 24),
+      // Each tab keeps its place (scroll position, postcode search) while you look at another
+      body: IndexedStack(index: _tab, children: [
+        HomePage(goTo: _goTo),
+        const EventsPage(),
+        const MeetingsPage(),
+        const ContactPage(),
+        const MorePage(),
+      ]),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tab,
+        onDestinationSelected: _goTo,
+        destinations: [
+          for (final (icon, selected, label) in _tabs)
+            NavigationDestination(icon: Icon(icon), selectedIcon: Icon(selected), label: label),
         ],
       ),
     );
   }
-
-  Widget _loaded<T>(AsyncSnapshot<T> snap, Widget Function(T) done) {
-    if (snap.hasError) return const Text('Couldn\'t load this. Check your connection and try again.');
-    if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-    return done(snap.data as T);
-  }
 }
-
-class _Heading extends StatelessWidget {
-  const _Heading(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 28, bottom: 8),
-        child: Text(text,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-      );
-}
-
-class EventCard extends StatelessWidget {
-  const EventCard(this.event, {super.key});
-  final ClubEvent event;
-
-  @override
-  Widget build(BuildContext context) {
-    final logo = event.logoUrl;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => open(event.url),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (logo != null)
-              Container(
-                color: Colors.white,
-                height: 120,
-                width: double.infinity,
-                child: Image.network(logo.toString(),
-                    fit: BoxFit.contain, errorBuilder: (_, _, _) => const SizedBox()),
-              ),
-            const SizedBox(height: 12),
-            Text(_dates(event.start, event.end),
-                style: const TextStyle(color: candyappleRed, fontWeight: FontWeight.bold)),
-            Text(event.title, style: Theme.of(context).textTheme.titleMedium),
-            Text(event.location),
-            if (event.note != null) ...[const SizedBox(height: 8), Text(event.note!)],
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-class AreaTile extends StatelessWidget {
-  const AreaTile(this.area, {super.key});
-  final Area area;
-
-  @override
-  Widget build(BuildContext context) => ExpansionTile(
-        title: Text(area.name),
-        subtitle: area.when == null ? null : Text(area.when!),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(switch ((area.venue, area.postcode)) {
-            (null, _) => 'Venue not listed. Ask the area contact.',
-            (final v?, null) => v,
-            (final v?, final p?) => '$v, $p',
-          }),
-          Wrap(spacing: 8, children: [
-            if (area.postcode != null)
-              TextButton(
-                onPressed: () => open('https://www.google.com/maps/search/?api=1&query='
-                    '${Uri.encodeComponent('${area.venue}, ${area.postcode}')}'),
-                child: const Text('Directions'),
-              ),
-            if (area.email != null)
-              TextButton(onPressed: () => open('mailto:${area.email}'), child: const Text('Email')),
-            if (area.facebook != null)
-              TextButton(onPressed: () => open(area.facebook!), child: const Text('Facebook')),
-          ]),
-        ],
-      );
-}
-
-const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-String _dates(DateTime start, DateTime end) {
-  String d(DateTime t) => '${t.day} ${_months[t.month - 1]} ${t.year}';
-  if (start == end) return d(start);
-  if (start.year == end.year && start.month == end.month) return '${start.day}–${d(end)}';
-  return '${d(start)} – ${d(end)}';
-}
-
-const _contacts = [
-  ('Membership secretary', 'Joining, renewals and membership cards', 'membership@mocgb.net'),
-  ('Age-related plates', 'Dating letters and DVLA registration for imported Mustangs', 'age@mocgb.net'),
-  ('Events secretary', 'Shows, club stands and booking', 'events@mocgb.net'),
-  ('Concours secretary', 'Judging at the national show', 'judging@mocgb.net'),
-  ('Magazine editor', 'Stories and photos for the club magazine', 'editor@mocgb.net'),
-  ('Chairman', 'Club matters', 'chairman@mocgb.net'),
-  ('General enquiries', 'Anything else', 'info@mocgb.net'),
-];
-
-const _links = [
-  ('Forum', 'Ask questions and talk Mustangs with members', 'https://forum.mocgb.net'),
-  ('FAQs', 'Registering imports, DVLA records and rejoining', 'https://www.mocgb.net/index.php/need-help'),
-  ('Facebook', 'The club\'s main page', 'https://www.facebook.com/MOCGB'),
-  ('For Sale & Wanted', 'Facebook group for cars and parts', 'https://www.facebook.com/groups/MOCGB.ForSaleWanted'),
-  ('Instagram', 'Photos from shows and meetings', 'https://www.instagram.com/mustangownersclub_of_gb/'),
-  ('mocgb.net', 'The club\'s main website', 'https://www.mocgb.net'),
-];
