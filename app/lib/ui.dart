@@ -60,9 +60,10 @@ ThemeData clubTheme(Brightness b) {
       shape: Border(bottom: BorderSide(color: scheme.outlineVariant)),
       systemOverlayStyle: light ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
     ),
+    // A faint blue-grey, so the tab bar reads as its own strip rather than another card
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: club.paper,
-      indicatorColor: light ? const Color(0xFFDDE3F0) : const Color(0xFF26355C),
+      backgroundColor: light ? const Color(0xFFE8EBF1) : const Color(0xFF1A2340),
+      indicatorColor: light ? const Color(0xFFCDD6EA) : const Color(0xFF2E3F6B),
       surfaceTintColor: Colors.transparent,
       labelTextStyle: WidgetStateProperty.resolveWith((s) => TextStyle(
             fontFamily: 'Archivo',
