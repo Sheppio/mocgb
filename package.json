@@ -4,6 +4,7 @@
   "description": "Mustang Owners Club of Great Britain website",
   "scripts": {
     "start": "python3 -m http.server 8765 --directory website",
+    "build": "sh scripts/build.sh",
     "check": "wrangler deploy --dry-run",
     "share:image": "sh scripts/share-image.sh",
     "calendar": "node scripts/calendar.mjs"

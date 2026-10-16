@@ -1,6 +1,6 @@
 # Deploying
 
-The MOCGB website is a static site served by a Cloudflare Worker with static assets: the `website/` folder, and no Worker code yet. Workers Builds deploys it straight from GitHub. The settings live in `wrangler.jsonc` in the repo root.
+The MOCGB website is a static site served by a Cloudflare Worker with static assets: the `website/` folder, and no Worker code yet. The Flutter app's web build is served from the same Worker at `/app/`. Workers Builds deploys it straight from GitHub. The settings live in `wrangler.jsonc` in the repo root.
 
 | Branch | What it is | Address |
 |---|---|---|
@@ -23,7 +23,7 @@ The `mocgb` Worker already exists and is connected to `Sheppio/mocgb`. In the da
 
 - **Worker name:** `mocgb`. It must match `name` in `wrangler.jsonc`, or the build fails.
 - **Git branch (production):** `prod`
-- **Build command:** none
+- **Build command:** `npm run build`, which builds the Flutter app into `website/app/` (see below)
 - **Deploy command:** `npx wrangler deploy` (the default)
 - **Builds for non-production branches:** on, with the preview command `npx wrangler preview` (the default). A push to `dev` then creates or updates the `dev` Preview, whose address stays the same and always shows the latest `dev`.
 
@@ -34,6 +34,14 @@ Previews need Wrangler 4.135.0 or later, which is installed as a dev dependency 
 To check the config locally without deploying: `npm run check`. To run the site locally: `npm start`, then open http://localhost:8765.
 
 `wrangler.jsonc` sets `workers_dev` and `preview_urls` to `true` explicitly, so deploys don't warn about falling back to defaults. It also has an empty `previews` block, which `wrangler preview` refuses to run without; Preview builds use the top-level settings. `package.json` denies the install scripts of `esbuild`, `workerd` and `fsevents` under `allowScripts`: they only fetch tools for running Worker code locally, which a static site doesn't need, and denying them stops npm warning about them on every install.
+
+## The Flutter app at /app/
+
+`scripts/build.sh` builds `app/` for the web into `website/app/`, which is never committed (it's in `.gitignore`). Workers Builds has no Flutter, so the script clones the version pinned in `FLUTTER_VERSION` into `.cache/flutter` first. When you upgrade Flutter locally, bump that version to match. Locally it uses the `flutter` on your PATH.
+
+Production (`WORKERS_CI_BRANCH=prod`) gets a release build. Every other build (local, `dev` and other branch Previews) is a profile build, so the device_preview menu works there (see `app/README.md`).
+
+Two other files handle `/app/`. `website/sw.js` ignores it, so the site's service worker doesn't cache Flutter's files or answer for them offline. `website/_headers` sends `Cache-Control: no-cache` for it, because Flutter's file names don't change between builds. The app uses `#` URLs (`/app/#/...`), so links into it never reach the Worker's 404 page.
 
 ## Things to know
 

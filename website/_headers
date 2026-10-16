@@ -2,6 +2,11 @@
 /sw.js
   Cache-Control: no-cache
 
+# The Flutter app's files (main.dart.js, flutter_bootstrap.js) keep the same names between builds,
+# so browsers must check for a new version every time.
+/app/*
+  Cache-Control: no-cache
+
 # Proof of concept: keep every address (production and Previews) out of search engines.
 # Remove this rule when the site goes public.
 /*

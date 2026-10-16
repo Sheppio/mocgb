@@ -1,7 +1,7 @@
 // Service worker: makes the site installable and keeps the last-seen version available offline.
 // Pages, styles, scripts and data are network-first, so members always get the latest when online.
 // Images and fonts show the saved copy straight away and fetch the latest in the background for next time.
-const CACHE = "mocgb-v4";
+const CACHE = "mocgb-v5";
 const CORE = [
   "/",
   "/styles.css",
@@ -32,6 +32,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   // Leave other sites (postcode lookup, fonts, mocgb.net) to the browser
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  // The Flutter app at /app/ handles its own loading and caching
+  if (url.pathname.startsWith("/app/")) return;
 
   // Images and fonts: stale-while-revalidate
   if (request.destination === "image" || request.destination === "font") {

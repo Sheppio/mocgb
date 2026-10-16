@@ -9,3 +9,4 @@ build/
 
 # Flutter web build, made by scripts/build.sh (never committed)
 website/app/
+.cache/
