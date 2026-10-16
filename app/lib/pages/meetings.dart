@@ -26,12 +26,13 @@ class _MeetingsPageState extends State<MeetingsPage> {
   }
 
   Future<void> _search(Future<Place> Function() find) async {
+    if (_busy) return; // the keyboard's Search key can fire while a lookup is still running
     setState(() => _busy = true);
     try {
       final place = await find();
       setState(() {
         _place = place;
-        _status = 'Closest areas to ${place.label}. Distances are in a straight line, not by road.';
+        _status = ''; // the result line is worked out in build, once the meetings have loaded
       });
     } on LookupError catch (e) {
       setState(() => _status = e.message);
@@ -70,6 +71,13 @@ class _MeetingsPageState extends State<MeetingsPage> {
                 .toList()
               ..sort((x, y) => x.miles.compareTo(y.miles)))
             .take(3);
+    final status = _status.isNotEmpty || place == null
+        ? _status
+        : areas != null
+            ? 'Closest areas to ${place.label}. Distances are in a straight line, not by road.'
+            : club.areasFailed
+                ? '' // the "couldn't be loaded" line below says it
+                : "Meetings aren't loaded yet. They'll show here as soon as they are.";
 
     return RefreshIndicator(
       onRefresh: club.load,
@@ -112,7 +120,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                 ),
               ]),
               if (_busy) const LinearProgressIndicator(),
-              if (_status.isNotEmpty) Text(_status, style: const TextStyle(fontWeight: FontWeight.w600)),
+              if (status.isNotEmpty) Text(status, style: const TextStyle(fontWeight: FontWeight.w600)),
               if (areas == null && club.areasFailed)
                 const Text("Meetings couldn't be loaded. See the list on mocgb.net.")
               else if (areas == null)

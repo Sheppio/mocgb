@@ -73,7 +73,9 @@ function eventTime(e) {
 async function loadEvents({ refresh = false } = {}) {
   const box = $("next-event");
   const list = $("more-events");
-  const today = new Date().toISOString().slice(0, 10);
+  // Today in the visitor's own time zone (toISOString would give the UTC date, a day behind after midnight in summer)
+  const now = new Date();
+  const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((n) => String(n).padStart(2, "0")).join("-");
   let events = [];
   try {
     const data = await getJSON("/data/events.json");

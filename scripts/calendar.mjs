@@ -15,7 +15,7 @@ const dayAfter = (iso) => {
   return d.toISOString().slice(0, 10);
 };
 // RFC 5545 text escaping, and folding of lines longer than 75 octets
-const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 const fold = (line) => {
   const out = [];
   let rest = Buffer.from(line, "utf8");
