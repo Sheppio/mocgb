@@ -96,6 +96,11 @@
   </script>
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
   <meta name="theme-color" content="#fafaf8">
+  <!-- Start fetching the font and the club data straight away, alongside Flutter's engine, instead of
+       waiting for the app's code to ask for them. The first screen needs all three. -->
+  <link rel="preload" href="assets/assets/fonts/Archivo.ttf" as="fetch" crossorigin>
+  <link rel="preload" href="/data/events.json" as="fetch" crossorigin>
+  <link rel="preload" href="/data/areas.json" as="fetch" crossorigin>
   <script>
     // Install support: Chrome, Edge and Android offer to install before Flutter has started, so keep
     // the offer here for the app's Install button (lib/install_web.dart) to use later.
