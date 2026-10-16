@@ -65,7 +65,14 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _tab = 0;
 
-  void _goTo(int tab) => setState(() => _tab = tab);
+  /// Tabs that have been opened. Each is built the first time it's shown, not at startup, so the
+  /// app doesn't spend its first seconds on screens (and event pictures) nobody has looked at yet.
+  final _opened = {0};
+
+  void _goTo(int tab) => setState(() {
+        _tab = tab;
+        _opened.add(tab);
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -81,11 +88,14 @@ class _AppShellState extends State<AppShell> {
       // Each tab keeps its place (scroll position, postcode search) while you look at another.
       // SafeArea keeps content clear of notches and camera holes when a phone is on its side.
       body: SafeArea(top: false, bottom: false, child: IndexedStack(index: _tab, children: [
-        HomePage(goTo: _goTo),
-        const EventsPage(),
-        const MeetingsPage(),
-        const ContactPage(),
-        const MorePage(),
+        for (final (i, page) in [
+          HomePage(goTo: _goTo),
+          const EventsPage(),
+          const MeetingsPage(),
+          const ContactPage(),
+          const MorePage(),
+        ].indexed)
+          _opened.contains(i) ? page : const SizedBox.shrink(),
       ])),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
