@@ -71,7 +71,8 @@ flutter_native_splash:
   android_12:
     color: "#1b2a4e"
     image: assets/icon/splash.png
-  web: true
+  # The web splash is hand-written in web/index.html (animated tail lights and a loading line)
+  web: false
   fullscreen: false
 
 # App icons, the same as the website's. After changing them, run: dart run flutter_launcher_icons

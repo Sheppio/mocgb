@@ -29,69 +29,79 @@
 
   <title>MOCGB</title>
   <link rel="manifest" href="manifest.json">
-  <style id="splash-screen-style">
-    html {
-      height: 100%
+  <!-- Splash screen, shown while Flutter starts: the club's three tail lights coming on in sequence on
+       Guardsman Blue, with a line saying what's loading. Hand-written: flutter_native_splash's web output
+       is turned off in pubspec.yaml so it doesn't overwrite this. -->
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { background: #1b2a4e; }
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      background: #1b2a4e;
+      transition: opacity 0.2s ease-out;
     }
-
-    body {
+    #splash.done { opacity: 0; }
+    .splash-lights { display: flex; gap: 7px; }
+    .splash-lights span {
+      width: 22px;
+      height: 74px;
+      border-radius: 2px;
+      background: #d01c25;
+      box-shadow: inset 0 5px 0 #ea3e45;   /* the lighter strip along the top, as in the app icon */
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      /* Like a Mustang's sequential tail lights: on left to right, then off left to right */
+      .splash-lights span { animation: splash-light 2.4s ease-in-out infinite both; }
+      .splash-lights span:nth-child(2) { animation-delay: 0.2s; }
+      .splash-lights span:nth-child(3) { animation-delay: 0.4s; }
+    }
+    @keyframes splash-light {
+      0%, 100% { background: #4a1518; box-shadow: inset 0 5px 0 #5a1c20; }
+      12% { background: #ff2a2f; box-shadow: inset 0 5px 0 #ff6a6e, 0 0 18px #ff2a2f; }
+      25%, 70% { background: #d01c25; box-shadow: inset 0 5px 0 #ea3e45; }
+      88% { background: #4a1518; box-shadow: inset 0 5px 0 #5a1c20; }
+    }
+    .splash-status {
       margin: 0;
-      min-height: 100%;
-      background-color: #1b2a4e;
-          background-size: 100% 100%;
-    }
-
-    .center {
-      margin: 0;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      -ms-transform: translate(-50%, -50%);
-      transform: translate(-50%, -50%);
-    }
-
-    .contain {
-      display:block;
-      width:100%; height:100%;
-      object-fit: contain;
-    }
-
-    .stretch {
-      display:block;
-      width:100%; height:100%;
-    }
-
-    .cover {
-      display:block;
-      width:100%; height:100%;
-      object-fit: cover;
-    }
-
-    .bottom {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      -ms-transform: translate(-50%, 0);
-      transform: translate(-50%, 0);
-    }
-
-    .bottomLeft {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
-
-    .bottomRight {
-      position: absolute;
-      bottom: 0;
-      right: 0;
+      min-height: 1.4em;
+      color: #c5cbd8;
+      font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+      padding: 0 24px;
     }
   </style>
-  <script id="splash-screen-script">
+  <script>
+    // What the splash's status line says. Every message follows something really happening: the data files
+    // arriving (the preloads below) and Flutter's start-up stages (web/flutter_bootstrap.js).
+    window.mocgbSplash = {
+      waiting: { events: true, meetings: true },
+      current: "loading",   // loading (the app's code) → starting (the engine) → opening (the home page)
+      slow: false,
+      done(what) { this.waiting[what] = false; this.show(); },
+      stage(name) { this.current = name; this.show(); },
+      show() {
+        const line = document.getElementById("splash-status");
+        if (!line) return;
+        line.textContent = this.waiting.events ? "Loading events\u2026"
+          : this.waiting.meetings ? "Loading meetings\u2026"
+          : this.slow && this.current !== "opening" ? "Still loading. A slow connection can take a little longer."
+          : { loading: "Loading the app\u2026", starting: "Starting the app\u2026", opening: "Opening the home page\u2026" }[this.current];
+      },
+    };
+    setTimeout(() => { mocgbSplash.slow = true; mocgbSplash.show(); }, 10000);
+    // Called by flutter_native_splash once the app has drawn its first screen
     function removeSplashFromWeb() {
-      document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
-      document.body.style.background = "transparent";
+      const splash = document.getElementById("splash");
+      if (!splash) return;
+      splash.classList.add("done");
+      setTimeout(() => splash.remove(), 200);
     }
   </script>
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
@@ -99,8 +109,10 @@
   <!-- Start fetching the font and the club data straight away, alongside Flutter's engine, instead of
        waiting for the app's code to ask for them. The first screen needs all three. -->
   <link rel="preload" href="assets/assets/fonts/Archivo.ttf" as="fetch" crossorigin>
-  <link rel="preload" href="/data/events.json" as="fetch" crossorigin>
-  <link rel="preload" href="/data/areas.json" as="fetch" crossorigin>
+  <link rel="preload" href="/data/events.json" as="fetch" crossorigin
+        onload="mocgbSplash.done('events')" onerror="mocgbSplash.done('events')">
+  <link rel="preload" href="/data/areas.json" as="fetch" crossorigin
+        onload="mocgbSplash.done('meetings')" onerror="mocgbSplash.done('meetings')">
   <script>
     // Install support: Chrome, Edge and Android offer to install before Flutter has started, so keep
     // the offer here for the app's Install button (lib/install_web.dart) to use later.
@@ -117,11 +129,11 @@
   </script>
 </head>
 <body>
-  <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
-  </picture>
+  <div id="splash">
+    <div class="splash-lights" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="splash-status" id="splash-status" role="status">Loading the app…</p>
+  </div>
+  <script>mocgbSplash.show();</script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
