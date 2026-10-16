@@ -30,7 +30,7 @@
   <title>MOCGB</title>
   <link rel="manifest" href="manifest.json">
   <!-- Splash screen, shown while Flutter starts: the club's three tail lights coming on in sequence on
-       Guardsman Blue, with a line saying what's loading. Hand-written: flutter_native_splash's web output
+       Guardsman Blue, with a line of loading messages. Hand-written: flutter_native_splash's web output
        is turned off in pubspec.yaml so it doesn't overwrite this. -->
   <style>
     html, body { height: 100%; margin: 0; }
@@ -78,24 +78,25 @@
     }
   </style>
   <script>
-    // What the splash's status line says. Every message follows something really happening: the data files
-    // arriving (the preloads below) and Flutter's start-up stages (web/flutter_bootstrap.js).
+    // The splash's status line: a message every 0.75s so the wait feels like steady progress, holding on
+    // the last one until the app is ready. After 10s it says a slow connection can take a little longer.
     window.mocgbSplash = {
-      waiting: { events: true, meetings: true },
-      current: "loading",   // loading (the app's code) → starting (the engine) → opening (the home page)
-      slow: false,
-      done(what) { this.waiting[what] = false; this.show(); },
-      stage(name) { this.current = name; this.show(); },
-      show() {
+      messages: ["Loading the app\u2026", "Loading events\u2026", "Loading meetings\u2026",
+                 "Starting the app\u2026", "Opening the home page\u2026"],
+      step: 0,
+      show(text) {
         const line = document.getElementById("splash-status");
-        if (!line) return;
-        line.textContent = this.waiting.events ? "Loading events\u2026"
-          : this.waiting.meetings ? "Loading meetings\u2026"
-          : this.slow && this.current !== "opening" ? "Still loading. A slow connection can take a little longer."
-          : { loading: "Loading the app\u2026", starting: "Starting the app\u2026", opening: "Opening the home page\u2026" }[this.current];
+        if (line) line.textContent = text ?? this.messages[this.step];
       },
     };
-    setTimeout(() => { mocgbSplash.slow = true; mocgbSplash.show(); }, 10000);
+    const splashTimer = setInterval(() => {
+      if (mocgbSplash.step < mocgbSplash.messages.length - 1) mocgbSplash.step++;
+      mocgbSplash.show();
+    }, 750);
+    setTimeout(() => {
+      clearInterval(splashTimer);
+      mocgbSplash.show("Still loading. A slow connection can take a little longer.");
+    }, 10000);
     // Called by flutter_native_splash once the app has drawn its first screen
     function removeSplashFromWeb() {
       const splash = document.getElementById("splash");
@@ -109,10 +110,8 @@
   <!-- Start fetching the font and the club data straight away, alongside Flutter's engine, instead of
        waiting for the app's code to ask for them. The first screen needs all three. -->
   <link rel="preload" href="assets/assets/fonts/Archivo.ttf" as="fetch" crossorigin>
-  <link rel="preload" href="/data/events.json" as="fetch" crossorigin
-        onload="mocgbSplash.done('events')" onerror="mocgbSplash.done('events')">
-  <link rel="preload" href="/data/areas.json" as="fetch" crossorigin
-        onload="mocgbSplash.done('meetings')" onerror="mocgbSplash.done('meetings')">
+  <link rel="preload" href="/data/events.json" as="fetch" crossorigin>
+  <link rel="preload" href="/data/areas.json" as="fetch" crossorigin>
   <script>
     // Install support: Chrome, Edge and Android offer to install before Flutter has started, so keep
     // the offer here for the app's Install button (lib/install_web.dart) to use later.
