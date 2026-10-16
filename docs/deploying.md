@@ -26,6 +26,7 @@ The `mocgb` Worker already exists and is connected to `Sheppio/mocgb`. In the da
 - **Build command:** `npm run build`, which builds the Flutter app into `website/app/` (see below)
 - **Deploy command:** `npx wrangler deploy` (the default)
 - **Builds for non-production branches:** on, with the preview command `npx wrangler preview` (the default). A push to `dev` then creates or updates the `dev` Preview, whose address stays the same and always shows the latest `dev`.
+- **Each Preview has its own build settings.** A Preview copies the build command when it's created, so one made before the build command was set keeps "None" and deploys without `website/app/` (`/app/` then returns 404). Check it under the Preview's **Builds → Build configuration**: build command `npm run build`, preview command `npx wrangler preview`, root directory `/`.
 
 The custom domain `mocgb.helloshep.com` is set in `wrangler.jsonc` under `routes`, with `previews_enabled: true`, so it serves production and each Preview gets `<preview-name>.mocgb.helloshep.com`. Cloudflare creates the `*.mocgb.helloshep.com` DNS record and certificate itself. Manage the domain only through `wrangler.jsonc`: every production deploy applies that route, so a change made in the dashboard is undone by the next release. While the site is a proof of concept, `website/_headers` sends `X-Robots-Tag: noindex` on every address, production included. When it goes public, remove that rule but keep one for `https://dev.mocgb.helloshep.com/*`, because custom-domain Previews don't get noindex automatically.
 
