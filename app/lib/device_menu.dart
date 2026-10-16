@@ -3,6 +3,7 @@
 import 'package:device_preview/device_preview.dart';
 import 'package:device_preview/presets.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _devices = [
   DevicePresets.iPhoneSe3,
@@ -14,6 +15,33 @@ const _devices = [
   DevicePresets.iPadMini,
   DevicePresets.iPadPro13M5,
 ];
+
+const _savedDevice = 'device_preview';
+
+/// Starts on the device chosen last time (iPhone 17 the first time), and remembers each change
+/// from then on. Does nothing when simulation is off (production).
+Future<void> restoreDevice() async {
+  final c = DevicePreview.maybeController;
+  if (c == null) return;
+  SharedPreferences? prefs;
+  try {
+    prefs = await SharedPreferences.getInstance();
+  } catch (_) {
+    // Storage unavailable (private browsing): start on iPhone 17 and don't remember
+  }
+  // Saved as "<preset id>|<orientation>", or "none" for the real screen
+  final saved = prefs?.getString(_savedDevice) ?? '${DevicePresets.iPhone17.id}|portrait';
+  final parts = saved.split('|');
+  final preset = _devices.where((d) => d.id == parts.first).firstOrNull;
+  if (preset != null) {
+    final landscape = parts.length > 1 && parts[1] == 'landscape';
+    await c.applyPreset(preset, orientation: landscape ? Orientation.landscape : Orientation.portrait);
+  }
+  c.simulationListenable.addListener(() {
+    final sim = c.simulationListenable.value;
+    prefs?.setString(_savedDevice, sim?.presetId == null ? 'none' : '${sim!.presetId}|${sim.orientation.name}');
+  });
+}
 
 class DeviceMenu extends StatelessWidget {
   const DeviceMenu({super.key});

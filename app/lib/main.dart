@@ -13,12 +13,13 @@ import 'pages/meetings.dart';
 import 'pages/more.dart';
 import 'ui.dart';
 
-void main() {
+Future<void> main() async {
   // Lets the app be shown as other phones and tablets (see device_menu.dart). device_preview only
   // simulates in debug and profile builds, so production (a release build) is unaffected.
   final binding = DevicePreview.enable();
   // Keep the splash screen (pubspec.yaml) up until the events have loaded, for at most 3 seconds
   FlutterNativeSplash.preserve(widgetsBinding: binding);
+  await restoreDevice();
   final data = ClubData();
   Future.any([data.firstLoad, Future.delayed(const Duration(seconds: 3))]).whenComplete(FlutterNativeSplash.remove);
   runApp(MocgbApp(data: data));
@@ -76,14 +77,15 @@ class _AppShellState extends State<AppShell> {
         ]),
         actions: const [DeviceMenu()],
       ),
-      // Each tab keeps its place (scroll position, postcode search) while you look at another
-      body: IndexedStack(index: _tab, children: [
+      // Each tab keeps its place (scroll position, postcode search) while you look at another.
+      // SafeArea keeps content clear of notches and camera holes when a phone is on its side.
+      body: SafeArea(top: false, bottom: false, child: IndexedStack(index: _tab, children: [
         HomePage(goTo: _goTo),
         const EventsPage(),
         const MeetingsPage(),
         const ContactPage(),
         const MorePage(),
-      ]),
+      ])),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: _goTo,
