@@ -3,6 +3,15 @@ if ("serviceWorker" in navigator) {
   addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(console.error));
 }
 
+// Ask the browser not to clear the offline copy when the phone runs low on space. Android otherwise
+// can, and the installed app then shows "You're offline". Chrome decides silently (it usually agrees
+// for installed apps), so ask on every launch: it may say yes later even if it said no before.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persisted()
+    .then((done) => done || navigator.storage.persist())
+    .catch(console.error);
+}
+
 (() => {
   const box = document.getElementById("install");
   if (!box) return;
